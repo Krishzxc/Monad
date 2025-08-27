@@ -421,8 +421,8 @@ export default function Home() {
             <div className="text-center text-sm text-cyan-300">
               <p>Type the words exactly as they appear to destroy them!</p>
               <p>
-                Words fall faster as time progresses. Don't let them reach the
-                bottom!
+                Words fall faster as time progresses. Don&apos;t let them reach
+                the bottom!
               </p>
             </div>
           </div>
