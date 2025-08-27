@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  usePrivy,
-  CrossAppAccountWithMetadata,
-} from "@privy-io/react-auth";
+import { usePrivy, CrossAppAccountWithMetadata } from "@privy-io/react-auth";
 
 interface MonadAuthProps {
   onAccountAddress?: (address: string | null) => void;
+  onUsername?: (username: string | null) => void;
 }
 
 interface UserData {
@@ -19,7 +17,10 @@ interface UserData {
   };
 }
 
-export default function MonadAuth({ onAccountAddress }: MonadAuthProps) {
+export default function MonadAuth({
+  onAccountAddress,
+  onUsername,
+}: MonadAuthProps) {
   const { authenticated, user, ready, logout, login } = usePrivy();
   const [accountAddress, setAccountAddress] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
@@ -32,20 +33,32 @@ export default function MonadAuth({ onAccountAddress }: MonadAuthProps) {
       const response = await fetch(
         `https://monad-games-id-site.vercel.app/api/check-wallet?wallet=${walletAddress}`
       );
-      
+
       if (response.ok) {
         const data: UserData = await response.json();
         if (data.hasUsername && data.user?.username) {
           setUsername(data.user.username);
+          if (onUsername) {
+            onUsername(data.user.username);
+          }
         } else {
           setUsername(null);
+          if (onUsername) {
+            onUsername(null);
+          }
         }
       } else {
         setUsername(null);
+        if (onUsername) {
+          onUsername(null);
+        }
       }
     } catch (error) {
       console.error("Error fetching username:", error);
       setUsername(null);
+      if (onUsername) {
+        onUsername(null);
+      }
     } finally {
       setLoadingUsername(false);
     }
@@ -57,11 +70,12 @@ export default function MonadAuth({ onAccountAddress }: MonadAuthProps) {
       // Check if user has linkedAccounts
       if (user.linkedAccounts.length > 0) {
         // Get the cross app account created using Monad Games ID
-        const crossAppAccount: CrossAppAccountWithMetadata = user.linkedAccounts.filter(
-          account => 
-            account.type === "cross_app" && 
-            account.providerApp.id === "cmd8euall0037le0my79qpz42"
-        )[0] as CrossAppAccountWithMetadata;
+        const crossAppAccount: CrossAppAccountWithMetadata =
+          user.linkedAccounts.filter(
+            account =>
+              account.type === "cross_app" &&
+              account.providerApp.id === "cmd8euall0037le0my79qpz42"
+          )[0] as CrossAppAccountWithMetadata;
 
         if (crossAppAccount) {
           // The first embedded wallet created using Monad Games ID, is the wallet address
@@ -74,11 +88,16 @@ export default function MonadAuth({ onAccountAddress }: MonadAuthProps) {
               onAccountAddress(address);
             }
           } else {
-            setMessage("No embedded wallets found in your Monad Games ID account.");
+            setMessage(
+              "No embedded wallets found in your Monad Games ID account."
+            );
             setAccountAddress(null);
             setUsername(null);
             if (onAccountAddress) {
               onAccountAddress(null);
+            }
+            if (onUsername) {
+              onUsername(null);
             }
           }
         } else {
@@ -88,6 +107,9 @@ export default function MonadAuth({ onAccountAddress }: MonadAuthProps) {
           if (onAccountAddress) {
             onAccountAddress(null);
           }
+          if (onUsername) {
+            onUsername(null);
+          }
         }
       } else {
         setMessage("You need to link your Monad Games ID account to continue.");
@@ -95,6 +117,9 @@ export default function MonadAuth({ onAccountAddress }: MonadAuthProps) {
         setUsername(null);
         if (onAccountAddress) {
           onAccountAddress(null);
+        }
+        if (onUsername) {
+          onUsername(null);
         }
       }
     } else if (ready && !authenticated) {
@@ -104,13 +129,14 @@ export default function MonadAuth({ onAccountAddress }: MonadAuthProps) {
       if (onAccountAddress) {
         onAccountAddress(null);
       }
+      if (onUsername) {
+        onUsername(null);
+      }
     }
-  }, [authenticated, user, ready, onAccountAddress]);
+  }, [authenticated, user, ready, onAccountAddress, onUsername]);
 
   return (
     <div className="bg-gray-900 p-6 rounded-lg space-y-4">
-      <h2 className="text-xl font-bold text-center">Monad Games Authentication</h2>
-      
       {!ready && (
         <div className="text-center text-gray-400">
           <p>Loading...</p>
@@ -119,7 +145,9 @@ export default function MonadAuth({ onAccountAddress }: MonadAuthProps) {
 
       {ready && !authenticated && (
         <div className="text-center space-y-4">
-          <p className="text-gray-300">Connect your wallet to access Monad Games</p>
+          <p className="text-gray-300">
+            Connect your wallet to access Monad Games
+          </p>
           <button
             onClick={login}
             className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold"
@@ -133,18 +161,23 @@ export default function MonadAuth({ onAccountAddress }: MonadAuthProps) {
         <div className="space-y-4">
           {accountAddress ? (
             <div className="text-center space-y-2">
-              <p className="text-green-400">✓ Monad Games ID Connected</p>
               {loadingUsername ? (
                 <p className="text-gray-400">Loading username...</p>
               ) : username ? (
                 <div className="space-y-1">
-                  <p className="text-lg font-semibold text-white">@{username}</p>
-                  <p className="text-xs text-gray-400 break-all">{accountAddress}</p>
+                  <p className="text-lg font-semibold text-white">
+                    @{username}
+                  </p>
+                  <p className="text-xs text-gray-400 break-all">
+                    {accountAddress}
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-1">
                   <p className="text-yellow-400">No username found</p>
-                  <p className="text-xs text-gray-400 break-all">{accountAddress}</p>
+                  <p className="text-xs text-gray-400 break-all">
+                    {accountAddress}
+                  </p>
                 </div>
               )}
               <button
@@ -161,7 +194,10 @@ export default function MonadAuth({ onAccountAddress }: MonadAuthProps) {
                 <p>Linked Accounts: {user?.linkedAccounts?.length || 0}</p>
                 {user?.linkedAccounts && user.linkedAccounts.length > 0 && (
                   <div className="text-xs">
-                    <p>Account Types: {user.linkedAccounts.map(acc => acc.type).join(", ")}</p>
+                    <p>
+                      Account Types:{" "}
+                      {user.linkedAccounts.map(acc => acc.type).join(", ")}
+                    </p>
                   </div>
                 )}
               </div>
