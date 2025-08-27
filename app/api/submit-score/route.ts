@@ -3,7 +3,6 @@ import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { monadTestnet } from "viem/chains";
 
-// Mock ABI for the updatePlayerData function
 const CONTRACT_ABI = [
   {
     inputs: [
